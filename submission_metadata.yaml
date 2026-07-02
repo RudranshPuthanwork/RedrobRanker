@@ -1,1 +1,66 @@
-# submission_metadata.yaml
+
+team_name: "Team Quasar"
+
+primary_contact:
+  name: "Rudransh Puthan"
+  email: "rudpwork19@gmail.com"   
+  phone: "+91-8698555596"
+
+team_members:
+  - name: "Rudransh Puthan"
+    email: "rudpwork19@gmail.com"
+    role: "ML Engineer"          
+  - name: "Nidhi Shukla"
+    email: "nidhistech0212@example.com"
+    role: "Data Scientist"
+
+
+github_repo: "https://github.com/RudranshPuthanwork/RedrobRanker"
+
+
+sandbox_link: "https://huggingface.co/spaces/RudranshPuthan/RedrobRanker"
+
+
+reproduce_command: "python rank.py --candidates candidates.jsonl --out submission.csv --top 100"
+
+compute:
+  platform: "Windows 11 Laptop (Intel Core i7-12700H)"                    
+  cpu_cores: 14                                  
+  ram_gb: 16                                   
+  python_version: "3.11.4"                      
+  os: "macOS 14.2"                              
+  uses_gpu_for_inference: false                 
+  has_network_during_ranking: false             
+  pre_computation_required: false             
+  pre_computation_time_minutes: 0               
+
+
+ai_tools_used:
+  - "Claude "    
+  - "Antigravity" 
+
+
+ai_usage_summary: |
+  "Used Claude for code review, debugging, and architectural discussion.
+  Used Antigravity as a development assistant for refactoring and improving code organization.
+  AI tools were used to assist development, while all implementation decisions and final verification were performed manually."
+ 
+methodology_summary: 
+  "The project follows a modular six-stage pipeline to evaluate and rank candidates efficiently.
+  Ingestion: Candidate profiles are loaded from a JSON Lines (.jsonl) file.
+  Quality Filtering: Profiles are checked for inconsistencies such as skill inflation, unrealistic work experience, education and experience mismatches, and overlapping full-time jobs. Profiles that fail these checks are removed.
+  Scoring: Each valid candidate is assigned a score based on three factors: Career (45%), Skills (30%), and Experience (25%). The final score is adjusted using deployment bonuses and location or behavioral multipliers.
+  Ranking: Candidates are sorted in descending order of their final score. If two candidates have the same score, the candidate ID is used as the tie-breaker in ascending order.
+  Reason Generation: A two-sentence explanation is created for every ranked candidate using predefined templates. This ensures that all justifications are based only on available profile information.
+  Export and Validation: The top 100 ranked candidates are exported to a CSV file. A validation step then checks the output for the correct schema, unique candidate IDs, proper ranking order, and consistent score ordering."
+
+# ============================================================================
+# Declarations
+# ============================================================================
+declarations:
+  read_submission_spec: true        # I have read submission_spec.md in full
+  code_is_original_work: true       # My code is my team's original work (using AI as a tool is fine)
+  no_collusion: true                # I have not coordinated my submission with other teams
+  honeypot_check_done: false        # OPTIONAL — set true if you explicitly checked for honeypots in your ranking
+  reproduction_tested: true         # I have tested that my reproduce_command runs end-to-end
+
