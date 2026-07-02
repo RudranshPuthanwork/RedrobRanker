@@ -143,6 +143,8 @@ Thumbs.db
 candidates.jsonl
 sample_candidates.json
 *.docx
+project_documentation.md
+sample_submission.csv
 
 # Optionally ignore submissions
 # submission.csv
