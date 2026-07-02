@@ -45,70 +45,157 @@ import pandas as pd
 REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 RANK_SCRIPT = os.path.join(REPO_ROOT, "rank.py")
 
-TARGET_CITIES = ["Pune", "Noida", "Delhi", "Gurugram", "Hyderabad", "Mumbai", "Bengaluru"]
-POSITIVE_SKILLS = ["embeddings", "vector search", "faiss", "rag", "nlp", "transformers", "search ranking"]
-NEGATIVE_SKILLS = ["computer vision", "robotics", "reinforcement learning (robotics)"]
+TARGET_CITIES = [
+    ("Pune", "Maharashtra"), ("Noida", "Uttar Pradesh"), ("Delhi", "Delhi"),
+    ("Gurugram", "Haryana"), ("Hyderabad", "Telangana"), ("Mumbai", "Maharashtra"),
+    ("Bengaluru", "Karnataka"),
+]
+OTHER_LOCATIONS = [("Chennai", "Tamil Nadu"), ("Toronto", None), ("London", None),
+                    ("San Francisco", None), ("Singapore", None)]
+
+POSITIVE_SKILLS = ["Embeddings", "Vector Search", "FAISS", "RAG", "NLP",
+                    "Transformers", "Search Ranking", "Fine-tuning LLMs", "LoRA"]
+NEGATIVE_SKILLS = ["Computer Vision", "Robotics", "Image Classification"]
+NEUTRAL_SKILLS = ["Python", "SQL", "AWS", "Kubernetes", "Docker", "GCP", "Excel"]
+
 COMPANIES = ["Search Labs AI", "VectorForge", "NeuralIndex", "InfoRetriever Inc",
-             "TCS", "Infosys", "SemanticStack", "RankWorks"]
+             "TCS", "Infosys", "Wipro", "SemanticStack", "RankWorks"]
+INDUSTRIES = ["Software", "IT Services", "AI/ML", "E-commerce"]
+COMPANY_SIZES = ["1-50", "51-200", "201-500", "1001-5000", "10001+"]
 TITLES = ["ML Engineer", "NLP Engineer", "Search Engineer", "Applied Scientist",
           "Data Scientist", "Backend Engineer", "Software Engineer"]
+DESCRIPTIONS = [
+    "Deployed and launched a production RAG search pipeline using embeddings and FAISS.",
+    "Built and A/B tested a vector search ranking model serving live traffic.",
+    "Worked on internal tooling, support tickets, and minor bug fixes.",
+    "Researched perception using computer vision and robotics control loops.",
+]
 
 
 # --------------------------------------------------------------------------
 # Sample data generation (for users without a real dataset to test with)
 # --------------------------------------------------------------------------
 
+def _iso(d: datetime) -> str:
+    return d.strftime("%Y-%m-%d")
+
+
 def _random_candidate(idx: int) -> dict:
     total_exp = round(random.uniform(1, 14), 1)
     n_roles = random.randint(1, 4)
-    careers = []
-    years_left = total_exp
+    career = []
+    cursor = datetime.now()
+    months_left = int(total_exp * 12)
     for i in range(n_roles):
-        dur = round(min(years_left, random.uniform(0.5, 4.0)), 1)
-        years_left = max(0.0, years_left - dur)
-        careers.append({
+        dur = max(3, min(months_left, random.randint(6, 48)))
+        months_left = max(0, months_left - dur)
+        start = cursor - timedelta(days=dur * 30)
+        is_current = i == 0
+        career.append({
             "company": random.choice(COMPANIES),
             "title": random.choice(TITLES),
-            "duration_years": dur,
-            "is_current": i == 0,
-            "description": random.choice([
-                "Deployed and launched a production RAG search pipeline using embeddings and faiss.",
-                "Built and A/B tested a vector search ranking model.",
-                "Worked on internal tooling and support tickets.",
-                "Researched robotics perception using computer vision.",
-            ]),
+            "start_date": _iso(start),
+            "end_date": None if is_current else _iso(cursor),
+            "duration_months": dur,
+            "is_current": is_current,
+            "industry": random.choice(INDUSTRIES),
+            "company_size": random.choice(COMPANY_SIZES),
+            "description": random.choice(DESCRIPTIONS),
+        })
+        cursor = start
+
+    grad_end = datetime.now().year - int(total_exp) - random.randint(0, 1)
+    education = [{
+        "institution": random.choice(["IIT Bombay", "BITS Pilani", "VIT Chennai", "Georgia Tech"]),
+        "degree": random.choice(["B.E.", "B.Tech", "M.Tech", "B.Sc"]),
+        "field_of_study": random.choice(["Computer Science", "Artificial Intelligence", "Electronics"]),
+        "start_year": grad_end - 4,
+        "end_year": grad_end,
+        "grade": f"{round(random.uniform(6.0, 9.5), 2)} CGPA",
+        "tier": random.choice(["tier_1", "tier_2", "tier_3"]),
+    }]
+
+    skills = []
+    assessment_scores = {}
+    for name in random.sample(POSITIVE_SKILLS, k=random.randint(2, 5)):
+        prof = random.choice(["beginner", "intermediate", "advanced", "expert"])
+        skills.append({
+            "name": name,
+            "proficiency": prof,
+            "endorsements": random.randint(0, 50),
+            "duration_months": random.randint(0, 48),
+        })
+        if random.random() < 0.7:
+            assessment_scores[name] = round(random.uniform(20, 100), 1)
+    for name in random.sample(NEGATIVE_SKILLS, k=random.randint(0, 2)):
+        skills.append({
+            "name": name,
+            "proficiency": random.choice(["beginner", "intermediate", "advanced"]),
+            "endorsements": random.randint(0, 20),
+            "duration_months": random.randint(0, 24),
+        })
+    for name in random.sample(NEUTRAL_SKILLS, k=random.randint(1, 3)):
+        skills.append({
+            "name": name,
+            "proficiency": random.choice(["beginner", "intermediate", "advanced"]),
+            "endorsements": random.randint(0, 20),
+            "duration_months": random.randint(0, 24),
         })
 
-    skills = {}
-    for s in random.sample(POSITIVE_SKILLS, k=random.randint(1, 4)):
-        skills[s] = {
-            "proficiency": random.choice(["beginner", "intermediate", "expert"]),
-            "duration_months": random.randint(0, 48),
-            "endorsements": random.randint(0, 20),
-            "assessment_score": random.randint(20, 100),
-        }
-    for s in random.sample(NEGATIVE_SKILLS, k=random.randint(0, 2)):
-        skills[s] = {
-            "proficiency": "intermediate",
-            "duration_months": random.randint(0, 24),
-            "endorsements": random.randint(0, 10),
-            "assessment_score": random.randint(20, 100),
-        }
+    city, state = random.choice(TARGET_CITIES + OTHER_LOCATIONS)
+    is_india = state is not None or city in [c for c, s in TARGET_CITIES]
+    location_str = f"{city}, {state}" if state else city
+
+    last_active = datetime.now() - timedelta(days=random.randint(0, 120))
+    signup = datetime.now() - timedelta(days=random.randint(120, 600))
 
     return {
-        "candidate_id": f"C{idx:04d}",
-        "name": f"Candidate {idx}",
-        "total_experience_years": total_exp,
-        "career": careers,
+        "candidate_id": f"CAND_{idx:07d}",
+        "profile": {
+            "anonymized_name": f"Candidate {idx}",
+            "headline": f"{career[0]['title']} | {total_exp} yrs experience",
+            "summary": f"Professional with {total_exp} years of experience in {career[0]['industry']}.",
+            "location": location_str,
+            "country": "India" if is_india else city,
+            "years_of_experience": total_exp,
+            "current_title": career[0]["title"],
+            "current_company": career[0]["company"],
+            "current_company_size": career[0]["company_size"],
+            "current_industry": career[0]["industry"],
+        },
+        "career_history": career,
+        "education": education,
         "skills": skills,
-        "current_location": random.choice(TARGET_CITIES + ["London", "San Francisco", "Singapore"]),
-        "willing_to_relocate": random.choice([True, False]),
-        "graduation_year": datetime.now().year - int(total_exp) - random.randint(0, 2),
-        "days_since_last_active": random.randint(0, 120),
-        "recruiter_response_rate": round(random.uniform(0, 1), 2),
-        "open_to_work": random.choice([True, False]),
-        "interview_completion_rate": round(random.uniform(0, 1), 2),
-        "notice_period_days": random.choice([0, 15, 30, 60, 90]),
+        "certifications": [],
+        "languages": [{"language": "English", "proficiency": "professional"}],
+        "redrob_signals": {
+            "profile_completeness_score": round(random.uniform(30, 100), 1),
+            "signup_date": _iso(signup),
+            "last_active_date": _iso(last_active),
+            "open_to_work_flag": random.choice([True, False]),
+            "profile_views_received_30d": random.randint(0, 50),
+            "applications_submitted_30d": random.randint(0, 10),
+            "recruiter_response_rate": round(random.uniform(0, 1), 2),
+            "avg_response_time_hours": round(random.uniform(1, 200), 1),
+            "skill_assessment_scores": assessment_scores,
+            "connection_count": random.randint(10, 800),
+            "endorsements_received": random.randint(0, 60),
+            "notice_period_days": random.choice([0, 15, 30, 60, 90]),
+            "expected_salary_range_inr_lpa": {
+                "min": round(random.uniform(8, 25), 1),
+                "max": round(random.uniform(25, 50), 1),
+            },
+            "preferred_work_mode": random.choice(["onsite", "remote", "hybrid"]),
+            "willing_to_relocate": random.choice([True, False]),
+            "github_activity_score": round(random.uniform(-1, 100), 1),
+            "search_appearance_30d": random.randint(0, 300),
+            "saved_by_recruiters_30d": random.randint(0, 10),
+            "interview_completion_rate": round(random.uniform(0, 1), 2),
+            "offer_acceptance_rate": round(random.uniform(-1, 1), 2),
+            "verified_email": random.choice([True, False]),
+            "verified_phone": random.choice([True, False]),
+            "linkedin_connected": random.choice([True, False]),
+        },
     }
 
 
@@ -133,10 +220,49 @@ def make_sample_file():
 # Pipeline runner
 # --------------------------------------------------------------------------
 
+def _normalize_to_jsonl(raw_path: str) -> str:
+    """rank.py's loader expects line-delimited JSON (one candidate per line).
+    Users may instead upload a single .json file containing a JSON array of
+    candidates (as Redrob's sample export does) -- convert that transparently
+    into a temp .jsonl file. Files that are already valid JSONL pass through
+    unchanged."""
+    with open(raw_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    stripped = content.lstrip()
+
+    # Case 1: a JSON array -> explode into one line per candidate.
+    if stripped.startswith("["):
+        candidates = json.loads(content)
+        tmp = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".jsonl", delete=False, dir=tempfile.gettempdir()
+        )
+        for c in candidates:
+            tmp.write(json.dumps(c) + "\n")
+        tmp.close()
+        return tmp.name
+
+    # Case 2: a single JSON object -> wrap as a one-line JSONL file.
+    if stripped.startswith("{"):
+        try:
+            obj = json.loads(content)
+            tmp = tempfile.NamedTemporaryFile(
+                mode="w", suffix=".jsonl", delete=False, dir=tempfile.gettempdir()
+            )
+            tmp.write(json.dumps(obj) + "\n")
+            tmp.close()
+            return tmp.name
+        except json.JSONDecodeError:
+            pass  # fall through -- might already be valid JSONL
+
+    # Case 3: already JSONL (or something rank.py's loader can handle as-is).
+    return raw_path
+
+
 def run_ranker(candidates_file, top_n):
     """Invoke rank.py as a subprocess and load the resulting CSV."""
     if candidates_file is None:
-        return None, None, "⚠️ Please upload a candidates .jsonl file first (or generate a sample)."
+        return None, None, "⚠️ Please upload a candidates .json or .jsonl file first (or generate a sample)."
 
     if not os.path.exists(RANK_SCRIPT):
         return None, None, (
@@ -145,7 +271,13 @@ def run_ranker(candidates_file, top_n):
             "alongside this app.py in the Space repo."
         )
 
-    in_path = candidates_file.name if hasattr(candidates_file, "name") else candidates_file
+    raw_path = candidates_file.name if hasattr(candidates_file, "name") else candidates_file
+
+    try:
+        in_path = _normalize_to_jsonl(raw_path)
+    except Exception:
+        return None, None, f"❌ Could not parse the uploaded file as JSON/JSONL:\n{traceback.format_exc()}"
+
     out_fd, out_path = tempfile.mkstemp(suffix=".csv")
     os.close(out_fd)
 
@@ -163,7 +295,8 @@ def run_ranker(candidates_file, top_n):
     except Exception as e:
         return None, None, f"❌ Failed to launch rank.py:\n{traceback.format_exc()}"
 
-    log = f"$ {' '.join(cmd)}\n\n--- stdout ---\n{proc.stdout}\n--- stderr ---\n{proc.stderr}"
+    convert_note = f"(converted {os.path.basename(raw_path)} -> JSONL)\n" if in_path != raw_path else ""
+    log = f"{convert_note}$ {' '.join(cmd)}\n\n--- stdout ---\n{proc.stdout}\n--- stderr ---\n{proc.stderr}"
 
     if proc.returncode != 0:
         return None, None, f"❌ Pipeline exited with code {proc.returncode}.\n\n{log}"
@@ -250,8 +383,8 @@ with gr.Blocks(title="Redrob Candidate Ranker", theme=gr.themes.Soft()) as demo:
             with gr.Row():
                 with gr.Column(scale=1):
                     file_input = gr.File(
-                        label="Candidates file (.jsonl)",
-                        file_types=[".jsonl"],
+                        label="Candidates file (.json array or .jsonl)",
+                        file_types=[".json", ".jsonl"],
                     )
                     top_n = gr.Slider(
                         minimum=1, maximum=500, value=100, step=1,
